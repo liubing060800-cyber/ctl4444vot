@@ -134,8 +134,8 @@ def run_polling_mode():
 
 def main():
     """主函数：根据环境选择启动模式"""
-    # 如果有 RENDER 环境变量，使用 Webhook 模式
-    if os.environ.get("RENDER") or os.environ.get("WEBHOOK_URL"):
+    # 如果有 PORT 环境变量（Render 等平台自动设置），使用 Webhook 模式
+    if os.environ.get("PORT") or os.environ.get("RENDER") or os.environ.get("WEBHOOK_URL"):
         run_webhook_mode()
     else:
         run_polling_mode()
