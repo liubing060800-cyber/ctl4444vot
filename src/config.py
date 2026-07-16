@@ -6,8 +6,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Telegram Bot Token（从环境变量读取，更安全）
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8986929764:AAHoPDRxuA9EIXERnWrw3ztR18TC0YChRmU")
+# Telegram Bot Token（必须从环境变量读取）
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN environment variable is required!")
 
 # OpenAI API Key（可选，用于智能问答）
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
