@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ctl444bot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python src/main.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: RENDER
+        value: "true"
+      - key: DB_PATH
+        value: "/tmp/ctl_bot.db"
