@@ -92,12 +92,7 @@ def run_webhook_mode():
     logger.info(f"📡 Webhook URL: {full_webhook_url}")
     logger.info(f"🌐 监听端口: {port}")
 
-    application = (
-        Application.builder()
-        .token(BOT_TOKEN)
-        .updater(None)  # Webhook 模式不需要 updater
-        .build()
-    )
+    application = Application.builder().token(BOT_TOKEN).build()
     setup_handlers(application)
     setup_scheduler(application)
 
