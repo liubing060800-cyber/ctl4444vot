@@ -14,8 +14,11 @@ if not BOT_TOKEN:
 # OpenAI API Key（可选，用于智能问答）
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
-# 数据库路径
-DB_PATH = os.getenv("DB_PATH", "data/ctl_bot.db")
+# 数据库路径（Render 用 /tmp，本地用 data）
+if os.environ.get("RENDER"):
+    DB_PATH = "/tmp/ctl_bot.db"
+else:
+    DB_PATH = os.getenv("DB_PATH", "data/ctl_bot.db")
 
 # 时区
 TIMEZONE = os.getenv("TIMEZONE", "Asia/Shanghai")
