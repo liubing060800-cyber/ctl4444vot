@@ -12,7 +12,6 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import BOT_TOKEN, LOG_LEVEL
 from handlers import (
@@ -47,53 +46,39 @@ logger = logging.getLogger(__name__)
 
 def setup_handlers(application: Application):
     """注册所有命令处理器"""
-    # 基础命令
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("today", today_command))
-
-    # 待办事项命令
     application.add_handler(CommandHandler("todo", todo_command))
     application.add_handler(CommandHandler("add", add_command))
     application.add_handler(CommandHandler("done", done_command))
     application.add_handler(CommandHandler("clear", clear_command))
-
-    # 笔记命令
     application.add_handler(CommandHandler("note", note_command))
     application.add_handler(CommandHandler("notes", notes_command))
     application.add_handler(CommandHandler("nsearch", nsearch_command))
-
-    # 提醒命令
     application.add_handler(CommandHandler("remind", remind_command))
     application.add_handler(CommandHandler("reminds", reminds_command))
     application.add_handler(CommandHandler("rdel", rdel_command))
-
-    # 日程命令
     application.add_handler(CommandHandler("schedule", schedule_command))
     application.add_handler(CommandHandler("sadd", sadd_command))
     application.add_handler(CommandHandler("sdel", sdel_command))
-
-    # 回调处理器（内联键盘）
     application.add_handler(CallbackQueryHandler(callback_handler))
-
-    # 普通消息处理器
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
 
 def setup_scheduler(application: Application):
-    """设置定时任务"""
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(
-        check_reminders,
-        "interval",
-        minutes=1,
-        args=[application],
-        id="reminder_check",
-        replace_existing=True,
-    )
-    scheduler.start()
-    logger.info("⏰ 提醒定时任务已启动（每分钟检查）")
-    return scheduler
+    """使用 python-telegram-bot 内置的 JobQueue 设置定时任务"""
+    job_queue = application.job_queue
+    if job_queue:
+        job_queue.run_repeating(
+            check_reminders,
+            interval=60,  # 每 60 秒检查一次
+            first=10,     # 启动后 10 秒开始第一次检查
+            name="reminder_check",
+        )
+        logger.info("⏰ 提醒定时任务已启动（每分钟检查）")
+    else:
+        logger.warning("⚠️ JobQueue 未启用，提醒功能将不可用")
 
 
 def run_webhook_mode():
@@ -103,20 +88,23 @@ def run_webhook_mode():
     webhook_path = "/telegram-webhook"
     full_webhook_url = f"{webhook_url.rstrip('/')}{webhook_path}"
 
-    logger.info(f"🚀 启动 Webhook 模式...")
+    logger.info("🚀 启动 Webhook 模式...")
     logger.info(f"📡 Webhook URL: {full_webhook_url}")
     logger.info(f"🌐 监听端口: {port}")
 
-    application = Application.builder().token(BOT_TOKEN).build()
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .updater(None)  # Webhook 模式不需要 updater
+        .build()
+    )
     setup_handlers(application)
     setup_scheduler(application)
 
-    # 启动 Webhook
     application.run_webhook(
         listen="0.0.0.0",
         port=port,
         webhook_url=full_webhook_url,
-        secret_token=None,
     )
 
 
@@ -134,7 +122,6 @@ def run_polling_mode():
 
 def main():
     """主函数：根据环境选择启动模式"""
-    # 如果有 PORT 环境变量（Render 等平台自动设置），使用 Webhook 模式
     if os.environ.get("PORT") or os.environ.get("RENDER") or os.environ.get("WEBHOOK_URL"):
         run_webhook_mode()
     else:
